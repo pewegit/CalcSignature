@@ -8,15 +8,8 @@ namespace CalcSignature
     /// </summary>
     public partial class App : Application
     {
-        // ADDED-BY-ME
-        // Example found in
-        // Microsoft Help Viewer 1.1 > Tab "Index" > "command-line arguments [WPF]"
         void app_Startup(object sender, StartupEventArgs e)
         {
-            // Help: Application.Startup Event:
-            // If you need access to the main window during startup, you need to manually
-            // create a new window object from your Startup event handler.
-            // Create main application window and start it
             MainWindow mainWindow = new MainWindow();
             mainWindow.Show();
             mainWindow.ComboBoxSignatureType.SelectedIndex = -1; // Undefined as initial selection

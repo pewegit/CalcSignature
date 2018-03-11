@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.IO;                    // File stream
 using System.Security.Cryptography;	// MD5, SHA-1, ... hash
 
@@ -15,16 +13,11 @@ namespace CalcSignature
     {
         private String[] signatureNames = new string[5] { "MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512" }; // as string
         private enum signatureIndex { MD5, SHA_1, SHA_256, SHA_384, SHA_512 }; // as index
-        private int iSelectedBrush = 0; // Flag to toggle between two different background images
-        private ImageBrush myBrush1;
-        private ImageBrush myBrush2;
-        private bool useBackground1 = false;
-        private bool useBackground2 = false;
 
         public MainWindow()
         {
             InitializeComponent();
-                        
+
             // Fill ComboBoxSignatureType with items
             for (int i = 0; i < signatureNames.Length; i++)
             {
@@ -32,47 +25,11 @@ namespace CalcSignature
                 cboxitem.Content = signatureNames[i];
                 ComboBoxSignatureType.Items.Add(cboxitem);
             }
-
-            // Prepare two different background images
-            myBrush1 = new ImageBrush();
-            myBrush2 = new ImageBrush();
-
-            // If it exists, load background picture 1 from sub-folder of "current process directory"\pic\Background1.jpg
-            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName), "pic", "Background1.jpg");
-            if ( File.Exists(path) )
-            {
-                var uri = new Uri(path);
-                myBrush1.ImageSource = new BitmapImage(uri);
-                // Following, if picture is a resource in the program (added to project):
-                // = new BitmapImage(new Uri("pack://application:,,,/DSCN3955_25.jpg", UriKind.Absolute));
-                useBackground1 = true;
-            }
-
-            // If it exists, load background picture 2 from sub-folder of "current process directory"\pic\Background2.jpg
-            path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName), "pic", "Background2.jpg");
-            if ( File.Exists(path) )
-            {
-                var uri = new Uri(path);
-                myBrush2.ImageSource = new BitmapImage(uri);
-                // Following, if picture is a resource in the program (added to project):    
-                // = new BitmapImage(new Uri("pack://application:,,,/DSCN3958_25.jpg", UriKind.Absolute));
-                useBackground2 = true;
-            }
-
-            if ( useBackground1 )
-            {
-                this.Background = myBrush1;
-            }
-            else
-            {
-                this.Background = myBrush2;
-            }
         }
 
         private void onBtnFileSelect(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            // Show open file dialog box, on which user can select a file
             Nullable<bool> result = dlg.ShowDialog();
 
             // If valid file was chosen
@@ -88,23 +45,7 @@ namespace CalcSignature
         private void onCBSignatureType(object sender, SelectionChangedEventArgs e)
         {
             string cbiText, bytesAsString = "";
-
-            iSelectedBrush ^= 1; // On each type change, toggle variable between 0 and 1
-            if (iSelectedBrush == 1)
-            {
-                if ( useBackground1 )
-                {
-                    this.Background = myBrush1;
-                }
-            }
-            else
-            {
-                if ( useBackground2 )
-                {
-                    this.Background = myBrush2;
-                }
-            }
-
+            
             // Get selected item as string
             ComboBoxItem cbi = ((sender as ComboBox).SelectedItem as ComboBoxItem);
             cbiText = cbi.Content.ToString();
@@ -113,10 +54,6 @@ namespace CalcSignature
 
             using (var stream = new BufferedStream(File.OpenRead(TextBoxFilePath.Text), 1200000))
             {
-                //SHA256Managed sha = new SHA256Managed();
-                //byte[] checksum = sha.ComputeHash(stream);
-                //bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
-
                 // Depending on selected item (string), decide signature to be calculated
                 if (cbiText.Equals(signatureNames[(int)signatureIndex.MD5]))
                 {
@@ -153,11 +90,7 @@ namespace CalcSignature
             md5 = new MD5CryptoServiceProvider();
             byte[] checksum = md5.ComputeHash(stream);
             string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
-
             return bytesAsString;
-
-            // can be written in one line like this
-            //new MD5CryptoServiceProvider().ComputeHash(dataBytes);
         }
 
         public string computeSha1(BufferedStream stream)
@@ -166,7 +99,6 @@ namespace CalcSignature
             sha1 = new SHA1CryptoServiceProvider();
             byte[] checksum = sha1.ComputeHash(stream);
             string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
-
             return bytesAsString;
         }
 
@@ -176,7 +108,6 @@ namespace CalcSignature
             sha256 = new SHA256Managed();
             byte[] checksum = sha256.ComputeHash(stream);
             string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
-
             return bytesAsString;
         }
 
@@ -186,7 +117,6 @@ namespace CalcSignature
             sha384 = new SHA384Managed();
             byte[] checksum = sha384.ComputeHash(stream);
             string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
-
             return bytesAsString;
         }
 
@@ -196,7 +126,6 @@ namespace CalcSignature
             sha512 = new SHA512Managed();
             byte[] checksum = sha512.ComputeHash(stream);
             string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
-
             return bytesAsString;
         }
     }
