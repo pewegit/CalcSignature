@@ -1,12 +1,19 @@
 ﻿<Window x:Class="CalcSignature.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CalcSignature"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
-    <Grid>
-        
+        Title="CalcSignature" Height="149.775" Width="1099.231">
+    <Grid Margin="10,13,20,14" RenderTransformOrigin="0.493,-0.084">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0*"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="0*"/>
+        </Grid.RowDefinitions>
+        <TextBox x:Name="TextBoxFilePath" Margin="15,14,0,0" TextWrapping="Wrap" Text="TextBoxFilePath" Grid.Column="1" Height="26" VerticalAlignment="Top" HorizontalAlignment="Left" Width="1001"/>
+        <Button x:Name="ButtonFileSelect" Content="..." Margin="1021,14,0,0" Click="onBtnFileSelect" Grid.Column="1" Height="26" VerticalAlignment="Top" HorizontalAlignment="Left" Width="27"/>
+        <ComboBox x:Name="ComboBoxSignatureType" HorizontalAlignment="Left" Margin="15,48,0,0" Width="76" SelectionChanged="onCBSignatureType" Grid.Column="1" Height="30" VerticalAlignment="Top"/>
+        <TextBox x:Name="TextBoxSignature" Margin="105,48,0,0" TextWrapping="Wrap" Text="TextBoxSignature" RenderTransformOrigin="0.509,2.043" Grid.Column="1" HorizontalAlignment="Left" Width="911" Height="30" VerticalAlignment="Top"/>
     </Grid>
 </Window>
