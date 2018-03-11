@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-
 using System.IO;                    // File stream
 using System.Security.Cryptography;	// MD5, SHA-1, ... hash
 
@@ -26,11 +25,47 @@ namespace CalcSignature
         {
             InitializeComponent();
                         
+            // Fill ComboBoxSignatureType with items
             for (int i = 0; i < signatureNames.Length; i++)
             {
                 ComboBoxItem cboxitem = new ComboBoxItem();
                 cboxitem.Content = signatureNames[i];
                 ComboBoxSignatureType.Items.Add(cboxitem);
+            }
+
+            // Prepare two different background images
+            myBrush1 = new ImageBrush();
+            myBrush2 = new ImageBrush();
+
+            // If it exists, load background picture 1 from sub-folder of "current process directory"\pic\Background1.jpg
+            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName), "pic", "Background1.jpg");
+            if ( File.Exists(path) )
+            {
+                var uri = new Uri(path);
+                myBrush1.ImageSource = new BitmapImage(uri);
+                // Following, if picture is a resource in the program (added to project):
+                // = new BitmapImage(new Uri("pack://application:,,,/DSCN3955_25.jpg", UriKind.Absolute));
+                useBackground1 = true;
+            }
+
+            // If it exists, load background picture 2 from sub-folder of "current process directory"\pic\Background2.jpg
+            path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName), "pic", "Background2.jpg");
+            if ( File.Exists(path) )
+            {
+                var uri = new Uri(path);
+                myBrush2.ImageSource = new BitmapImage(uri);
+                // Following, if picture is a resource in the program (added to project):    
+                // = new BitmapImage(new Uri("pack://application:,,,/DSCN3958_25.jpg", UriKind.Absolute));
+                useBackground2 = true;
+            }
+
+            if ( useBackground1 )
+            {
+                this.Background = myBrush1;
+            }
+            else
+            {
+                this.Background = myBrush2;
             }
         }
 
@@ -52,8 +87,23 @@ namespace CalcSignature
 
         private void onCBSignatureType(object sender, SelectionChangedEventArgs e)
         {
-            byte[] bytes, chkSum;
             string cbiText, bytesAsString = "";
+
+            iSelectedBrush ^= 1; // On each type change, toggle variable between 0 and 1
+            if (iSelectedBrush == 1)
+            {
+                if ( useBackground1 )
+                {
+                    this.Background = myBrush1;
+                }
+            }
+            else
+            {
+                if ( useBackground2 )
+                {
+                    this.Background = myBrush2;
+                }
+            }
 
             // Get selected item as string
             ComboBoxItem cbi = ((sender as ComboBox).SelectedItem as ComboBoxItem);
@@ -61,166 +111,92 @@ namespace CalcSignature
             
             if (TextBoxFilePath.Text == "") return;
 
-            bytes = readFile(TextBoxFilePath.Text);
-            if ( bytes != null )
+            using (var stream = new BufferedStream(File.OpenRead(TextBoxFilePath.Text), 1200000))
             {
+                //SHA256Managed sha = new SHA256Managed();
+                //byte[] checksum = sha.ComputeHash(stream);
+                //bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
+
                 // Depending on selected item (string), decide signature to be calculated
-                if ( cbiText.Equals(signatureNames[(int) signatureIndex.MD5]) )
+                if (cbiText.Equals(signatureNames[(int)signatureIndex.MD5]))
                 {
-                    chkSum = computeMd5(bytes);
-                    bytesAsString = byte2hexString(chkSum, 16);
+                    bytesAsString = computeMd5(stream);
                 }
-                else if ( cbiText.Equals(signatureNames[(int) signatureIndex.SHA_1]) )
+                else if (cbiText.Equals(signatureNames[(int)signatureIndex.SHA_1]))
                 {
-                    chkSum = computeSha1(bytes);
-                    bytesAsString = byte2hexString(chkSum, 20); // 20 Bytes
+                    bytesAsString = computeSha1(stream);
                 }
-                else if ( cbiText.Equals(signatureNames[(int) signatureIndex.SHA_256]) )
+                else if (cbiText.Equals(signatureNames[(int)signatureIndex.SHA_256]))
                 {
-                    chkSum = computeSha256(bytes);
-                    bytesAsString = byte2hexString(chkSum, 32); // 32 Bytes
+                    bytesAsString = computeSha256(stream);
                 }
-                else if ( cbiText.Equals(signatureNames[(int) signatureIndex.SHA_384]) )
+                else if (cbiText.Equals(signatureNames[(int)signatureIndex.SHA_384]))
                 {
-                    chkSum = computeSha384(bytes);
-                    bytesAsString = byte2hexString(chkSum, 48); // 48 Bytes
+                    bytesAsString = computeSha384(stream);
                 }
-                else if ( cbiText.Equals(signatureNames[(int)signatureIndex.SHA_512]) )
+                else if (cbiText.Equals(signatureNames[(int)signatureIndex.SHA_512]))
                 {
-                    chkSum = computeSha512(bytes);
-                    bytesAsString = byte2hexString(chkSum, 64); // 64 Bytes
+                    bytesAsString = computeSha512(stream);
                 }
                 else
                 {
                     ; // selection not implemented
                 }
-                TextBoxSignature.Text = bytesAsString;
-                System.Windows.Clipboard.SetText(bytesAsString);
             }
+            TextBoxSignature.Text = bytesAsString;
+            System.Windows.Clipboard.SetText(bytesAsString);
         }
 
-        ////////////////////////////////////////////////////////////
-        // Returns all the bytes in file
-        ////////////////////////////////////////////////////////////
-        public byte[] readFile(string file)
+        public string computeMd5(BufferedStream stream)
         {
-            byte[] bytes = null;
-
-            try
-            {
-                using (FileStream fsSource = new FileStream(file,
-                    FileMode.Open, FileAccess.Read))
-                {
-                    // Read the source file into a byte array.
-                    bytes = new byte[fsSource.Length];
-                    int numBytesToRead = (int)fsSource.Length;
-                    int numBytesRead = 0;
-                    while (numBytesToRead > 0)
-                    {
-                        // Read may return anything from 0 to numBytesToRead.
-                        int n = fsSource.Read(bytes, numBytesRead, numBytesToRead);
-
-                        // Break when the end of the file is reached.
-                        if (n == 0)
-                            break;
-
-                        numBytesRead += n;
-                        numBytesToRead -= n;
-                    }
-                    numBytesToRead = bytes.Length;
-                }
-            }
-            catch (FileNotFoundException ioEx)
-            {
-                Console.WriteLine(ioEx.Message);
-            }
-
-            return bytes;
-        }
-
-        ////////////////////////////////////////////////////////////
-        // Returns the MD5 checksum of the dataBytes
-        ////////////////////////////////////////////////////////////
-        public byte[] computeMd5(byte[] dataBytes)
-        {
-            byte[] result;
             MD5 md5;
-
             md5 = new MD5CryptoServiceProvider();
-            result = md5.ComputeHash(dataBytes);
+            byte[] checksum = md5.ComputeHash(stream);
+            string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
 
-            return result;
+            return bytesAsString;
 
             // can be written in one line like this
-            //return new MD5CryptoServiceProvider().ComputeHash(dataBytes);
+            //new MD5CryptoServiceProvider().ComputeHash(dataBytes);
         }
-        ////////////////////////////////////////////////////////////
-        // Returns the SHA-1 checksum of the dataBytes
-        ////////////////////////////////////////////////////////////
-        byte[] computeSha1(byte[] dataBytes)
+
+        public string computeSha1(BufferedStream stream)
         {
-            byte[] result;
             SHA1 sha1;
-
             sha1 = new SHA1CryptoServiceProvider();
-            result = sha1.ComputeHash(dataBytes);
+            byte[] checksum = sha1.ComputeHash(stream);
+            string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
 
-            return result;
+            return bytesAsString;
         }
 
-        ////////////////////////////////////////////////////////////
-        // Returns the SHA-256 checksum of the dataBytes
-        ////////////////////////////////////////////////////////////
-        byte[] computeSha256(byte[] dataBytes)
+        public string computeSha256(BufferedStream stream)
         {
-            byte[] result;
             SHA256 sha256;
-
             sha256 = new SHA256Managed();
-            result = sha256.ComputeHash(dataBytes);
+            byte[] checksum = sha256.ComputeHash(stream);
+            string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
 
-            return result;
+            return bytesAsString;
         }
 
-        ////////////////////////////////////////////////////////////
-        // Returns the SHA-384 checksum of the dataBytes
-        ////////////////////////////////////////////////////////////
-        byte[] computeSha384(byte[] dataBytes)
+        public string computeSha384(BufferedStream stream)
         {
-            byte[] result;
             SHA384 sha384;
-
             sha384 = new SHA384Managed();
-            result = sha384.ComputeHash(dataBytes);
+            byte[] checksum = sha384.ComputeHash(stream);
+            string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
 
-            return result;
+            return bytesAsString;
         }
 
-        ////////////////////////////////////////////////////////////
-        // Returns the SHA-512 checksum of the dataBytes
-        ////////////////////////////////////////////////////////////
-        byte[] computeSha512(byte[] dataBytes)
+        public string computeSha512(BufferedStream stream)
         {
-            byte[] result;
             SHA512 sha512;
-
             sha512 = new SHA512Managed();
-            result = sha512.ComputeHash(dataBytes);
+            byte[] checksum = sha512.ComputeHash(stream);
+            string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
 
-            return result;
-        }
-
-        ////////////////////////////////////////////////////////////
-        // Returns the 'num' bytes as string buffer
-        ////////////////////////////////////////////////////////////
-        public string byte2hexString(byte[] bytes, uint num)
-        {
-            string bytesAsString = "";
-            for (int i = 0; i < num; i++)
-            {
-                string str = String.Format("{0:X2}", bytes[i]); ;
-                bytesAsString += str;
-            }
             return bytesAsString;
         }
     }
