@@ -23,7 +23,7 @@ namespace CalcSignature
                 mainWindow.TextBoxFilePath.Text = argument;
                 using (var stream = new BufferedStream(File.OpenRead(mainWindow.TextBoxFilePath.Text), 1200000))
                 {
-                    string bytesAsString = mainWindow.computeMd5(stream);
+                    string bytesAsString = mainWindow.checksum(stream, "MD5");
                     mainWindow.TextBoxSignature.Text = bytesAsString;
                     mainWindow.ComboBoxSignatureType.SelectedIndex = 0; // Select MD5
                 }

@@ -54,77 +54,48 @@ namespace CalcSignature
 
             using (var stream = new BufferedStream(File.OpenRead(TextBoxFilePath.Text), 1200000))
             {
-                // Depending on selected item (string), decide signature to be calculated
-                if (cbiText.Equals(signatureNames[(int)signatureIndex.MD5]))
-                {
-                    bytesAsString = computeMd5(stream);
-                }
-                else if (cbiText.Equals(signatureNames[(int)signatureIndex.SHA_1]))
-                {
-                    bytesAsString = computeSha1(stream);
-                }
-                else if (cbiText.Equals(signatureNames[(int)signatureIndex.SHA_256]))
-                {
-                    bytesAsString = computeSha256(stream);
-                }
-                else if (cbiText.Equals(signatureNames[(int)signatureIndex.SHA_384]))
-                {
-                    bytesAsString = computeSha384(stream);
-                }
-                else if (cbiText.Equals(signatureNames[(int)signatureIndex.SHA_512]))
-                {
-                    bytesAsString = computeSha512(stream);
-                }
-                else
-                {
-                    ; // selection not implemented
-                }
+                bytesAsString = checksum(stream, cbiText);
             }
             TextBoxSignature.Text = bytesAsString;
-            System.Windows.Clipboard.SetText(bytesAsString);
+            System.Windows.Clipboard.SetDataObject(bytesAsString);
         }
 
-        public string computeMd5(BufferedStream stream)
+        public string checksum(BufferedStream stream, string signatureName)
         {
-            MD5 md5;
-            md5 = new MD5CryptoServiceProvider();
-            byte[] checksum = md5.ComputeHash(stream);
-            string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
-            return bytesAsString;
-        }
+            byte[] checksum = { 0 };
 
-        public string computeSha1(BufferedStream stream)
-        {
-            SHA1 sha1;
-            sha1 = new SHA1CryptoServiceProvider();
-            byte[] checksum = sha1.ComputeHash(stream);
-            string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
-            return bytesAsString;
-        }
+            switch (signatureName)
+            {
+                case "MD5":
+                    MD5 md5;
+                    md5 = new MD5CryptoServiceProvider();
+                    checksum = md5.ComputeHash(stream);
+                    break;
+                case "SHA-1":
+                    SHA1 sha1;
+                    sha1 = new SHA1CryptoServiceProvider();
+                    checksum = sha1.ComputeHash(stream);
+                    break;
+                case "SHA-256":
+                    SHA256 sha256;
+                    sha256 = new SHA256Managed();
+                    checksum = sha256.ComputeHash(stream);
+                    break;
+                case "SHA-384":
+                    SHA384 sha384;
+                    sha384 = new SHA384Managed();
+                    checksum = sha384.ComputeHash(stream);
+                    break;
+                case "SHA-512":
+                    SHA512 sha512;
+                    sha512 = new SHA512Managed();
+                    checksum = sha512.ComputeHash(stream);
+                    break;
+                default:
+                    ; // invalid
+                    break;
+            }
 
-        public string computeSha256(BufferedStream stream)
-        {
-            SHA256 sha256;
-            sha256 = new SHA256Managed();
-            byte[] checksum = sha256.ComputeHash(stream);
-            string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
-            return bytesAsString;
-        }
-
-        public string computeSha384(BufferedStream stream)
-        {
-            SHA384 sha384;
-            sha384 = new SHA384Managed();
-            byte[] checksum = sha384.ComputeHash(stream);
-            string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
-            return bytesAsString;
-        }
-
-        public string computeSha512(BufferedStream stream)
-        {
-            SHA512 sha512;
-            sha512 = new SHA512Managed();
-            byte[] checksum = sha512.ComputeHash(stream);
             string bytesAsString = BitConverter.ToString(checksum).Replace("-", String.Empty);
             return bytesAsString;
         }
